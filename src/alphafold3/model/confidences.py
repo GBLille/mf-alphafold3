@@ -661,3 +661,86 @@ def chain_pairwise_predicted_tm_scores(
       all_pairs_iptms[i, i + j] = iptm
       all_pairs_iptms[i + j, i] = iptm
   return all_pairs_iptms
+
+
+def _actifptm_score_from_pair_weights(
+    *,
+    tm_adjusted_pae: np.ndarray,
+    pair_weights: np.ndarray,
+    residue_weights: np.ndarray,
+    valid_inter_chain_mask: np.ndarray,
+) -> float:
+  pair_weights = pair_weights * valid_inter_chain_mask
+  if np.sum(pair_weights) == 0:
+    return 0.0
+  normed_residue_mask = pair_weights / (
+      1e-8 + np.sum(pair_weights, axis=-1, keepdims=True)
+  )
+  per_alignment = np.sum(tm_adjusted_pae * normed_residue_mask, axis=-1)
+  return float(np.max(per_alignment * residue_weights))
+
+
+def actifptm_scores(
+    *,
+    tm_adjusted_pae: np.ndarray,
+    pair_mask: np.ndarray,
+    asym_id: np.ndarray,
+    contact_probs: np.ndarray,
+    contact_threshold: float = 0.6,
+) -> tuple[float, np.ndarray]:
+  """Compute ColabFold-style actifpTM scores.
+
+  Args:
+    tm_adjusted_pae: [num_res, num_res] tensor for computing TMScore values.
+    pair_mask: A [num_res, num_res] mask specifying which frames are valid.
+    asym_id: [num_res] asymmetric unit ID (the chain ID).
+    contact_probs: [num_res, num_res] predicted contact probabilities.
+    contact_threshold: Minimum contact probability defining interface residues.
+
+  Returns:
+    A tuple of the full actifpTM score and a [num_chains, num_chains] matrix of
+    pairwise actifpTM scores.
+  """
+  num_tokens = tm_adjusted_pae.shape[0]
+  unique_chains = list(np.unique(asym_id))
+  num_chains = len(unique_chains)
+  chain_pair_actifptm = np.full((num_chains, num_chains), np.nan)
+  inter_chain_mask = asym_id[:, None] != asym_id[None, :]
+  valid_inter_chain_mask = pair_mask * inter_chain_mask
+  full_pair_weights = np.zeros((num_tokens, num_tokens), dtype=float)
+
+  for i, chain_i in enumerate(unique_chains):
+    chain_i_mask = asym_id == chain_i
+    chain_i_indices = np.where(chain_i_mask)[0]
+    for j, chain_j in enumerate(unique_chains[i + 1 :], start=i + 1):
+      chain_j_mask = asym_id == chain_j
+      chain_j_indices = np.where(chain_j_mask)[0]
+      sub_contacts = contact_probs[np.ix_(chain_i_indices, chain_j_indices)]
+      contact_positions = np.where(sub_contacts >= contact_threshold)
+
+      residue_weights = np.zeros(num_tokens, dtype=float)
+      if contact_positions[0].size > 0:
+        selected_i = chain_i_indices[contact_positions[0]]
+        selected_j = chain_j_indices[contact_positions[1]]
+        residue_weights[np.unique(np.concatenate([selected_i, selected_j]))] = 1
+        pair_weights = residue_weights[None, :] * residue_weights[:, None]
+        score = _actifptm_score_from_pair_weights(
+            tm_adjusted_pae=tm_adjusted_pae,
+            pair_weights=pair_weights,
+            residue_weights=residue_weights,
+            valid_inter_chain_mask=valid_inter_chain_mask,
+        )
+        full_pair_weights += pair_weights
+      else:
+        score = 0.0
+
+      chain_pair_actifptm[i, j] = score
+      chain_pair_actifptm[j, i] = score
+
+  full_actifptm = _actifptm_score_from_pair_weights(
+      tm_adjusted_pae=tm_adjusted_pae,
+      pair_weights=full_pair_weights,
+      residue_weights=np.ones(num_tokens, dtype=float),
+      valid_inter_chain_mask=valid_inter_chain_mask,
+  )
+  return full_actifptm, chain_pair_actifptm

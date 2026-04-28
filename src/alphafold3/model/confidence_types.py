@@ -194,6 +194,8 @@ class StructureConfidenceSummary:
    has_clash: Has significant clashing.
    chain_pair_pae_min: [num_chains, num_chains] Minimum cross chain PAE.
    chain_pair_iptm: [num_chains, num_chains] Chain pair ipTM.
+   actifptm: ColabFold-style interface pTM restricted to predicted contacts.
+   chain_pair_actifptm: [num_chains, num_chains] Chain pair actifpTM.
    chain_ptm: [num_chains] Chain pTM.
    chain_iptm: [num_chains] Mean cross chain ipTM for a chain.
   """
@@ -205,6 +207,8 @@ class StructureConfidenceSummary:
   has_clash: float
   chain_pair_pae_min: np.ndarray
   chain_pair_iptm: np.ndarray
+  actifptm: float
+  chain_pair_actifptm: np.ndarray
   chain_ptm: np.ndarray
   chain_iptm: np.ndarray
 
@@ -223,6 +227,8 @@ class StructureConfidenceSummary:
         has_clash=float(inference_result.metadata['has_clash']),
         chain_pair_pae_min=inference_result.metadata['chain_pair_pae_min'],
         chain_pair_iptm=inference_result.metadata['chain_pair_iptm'],
+        actifptm=float(inference_result.metadata['actifptm']),
+        chain_pair_actifptm=inference_result.metadata['chain_pair_actifptm'],
         chain_ptm=inference_result.metadata['iptm_ichain'],
         chain_iptm=inference_result.metadata['iptm_xchain'],
     )

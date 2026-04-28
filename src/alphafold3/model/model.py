@@ -213,6 +213,27 @@ def _compute_chain_pair_iptm(
   )
 
 
+def _compute_actifptm(
+    num_tokens: int,
+    asym_ids: np.ndarray,
+    mask: np.ndarray,
+    contact_probs: np.ndarray,
+    tm_adjusted_pae: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+  """Computes ColabFold-style actifpTM metrics from PAE and contacts."""
+  actifptm_and_chain_pair_actifptm = [
+      confidences.actifptm_scores(
+          tm_adjusted_pae=sample_tm_adjusted_pae[:num_tokens, :num_tokens],
+          asym_id=asym_ids[:num_tokens],
+          pair_mask=mask[:num_tokens, :num_tokens],
+          contact_probs=contact_probs[:num_tokens, :num_tokens],
+      )
+      for sample_tm_adjusted_pae in tm_adjusted_pae
+  ]
+  actifptm, chain_pair_actifptm = zip(*actifptm_and_chain_pair_actifptm)
+  return np.stack(actifptm, axis=0), np.stack(chain_pair_actifptm, axis=0)
+
+
 class Model(hk.Module):
   """Full model. Takes in data batch and returns model outputs."""
 
@@ -447,6 +468,13 @@ class Model(hk.Module):
         mask=pae_single_mask,
         tm_adjusted_pae=result['tmscore_adjusted_pae_interface'],
     )
+    actifptm, chain_pair_actifptm = _compute_actifptm(
+        num_tokens=num_tokens,
+        asym_ids=batch.token_features.asym_id,
+        mask=pae_single_mask,
+        contact_probs=contact_probs,
+        tm_adjusted_pae=result['tmscore_adjusted_pae_global'],
+    )
     # iptm_ichain is a vector of per-chain ptm values. iptm_ichain[0],
     # for example, is just the zeroth diagonal entry of the chain pair iptm
     # matrix:
@@ -501,6 +529,7 @@ class Model(hk.Module):
               'chain_pair_pae_min': chain_pair_pae_min[idx],
               'ptm': ptm[idx],
               'iptm': iptm[idx],
+              'actifptm': actifptm[idx],
               'ptm_iptm_average': ptm_iptm_average[idx],
               'intra_chain_single_pde': intra_chain_single_pde[idx],
               'cross_chain_single_pde': cross_chain_single_pde[idx],
@@ -509,6 +538,7 @@ class Model(hk.Module):
               'ranking_confidence': ranking_confidence[idx],
               'ranking_confidence_pae': ranking_confidence_pae[idx],
               'chain_pair_iptm': chain_pair_iptm[idx],
+              'chain_pair_actifptm': chain_pair_actifptm[idx],
               'iptm_ichain': iptm_ichain[idx],
               'iptm_xchain': iptm_xchain[idx],
               'token_chain_ids': chain_ids,
