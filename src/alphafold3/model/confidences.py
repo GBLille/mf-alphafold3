@@ -688,7 +688,7 @@ def actifptm_scores(
     contact_probs: np.ndarray,
     contact_threshold: float = 0.6,
 ) -> tuple[float, np.ndarray]:
-  """Compute ColabFold-style actifpTM scores.
+  """Compute ColabFold-style actifpTM (https://doi.org/10.1093/bioinformatics/btaf107) scores.
 
   Args:
     tm_adjusted_pae: [num_res, num_res] tensor for computing TMScore values.
@@ -715,6 +715,16 @@ def actifptm_scores(
     for j, chain_j in enumerate(unique_chains[i + 1 :], start=i + 1):
       chain_j_mask = asym_id == chain_j
       chain_j_indices = np.where(chain_j_mask)[0]
+      chain_pair_mask = chain_i_mask | chain_j_mask
+      chain_pair_indices = np.where(chain_pair_mask)[0]
+      chain_pair_ix = np.ix_(chain_pair_indices, chain_pair_indices)
+      chain_pair_asym_id = asym_id[chain_pair_mask]
+      chain_pair_inter_chain_mask = (
+          chain_pair_asym_id[:, None] != chain_pair_asym_id[None, :]
+      )
+      if np.sum(pair_mask[chain_pair_ix] * chain_pair_inter_chain_mask) == 0:
+        continue
+
       sub_contacts = contact_probs[np.ix_(chain_i_indices, chain_j_indices)]
       contact_positions = np.where(sub_contacts >= contact_threshold)
 
