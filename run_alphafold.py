@@ -302,16 +302,16 @@ _XLA_FLAGS = flags.DEFINE_string(
 )
 _XLA_PYTHON_CLIENT_PREALLOCATE = flags.DEFINE_bool(
     'xla_python_client_preallocate',
-    None,
+    True,
     'Set to false when using unified memory (--tf_force_unified_memory), '
-    ' usually for input over 5,120 tokens on an 80 GB A100/H100,'
-    ' or true in most cases on smaller inputs.',
+    ' usually for input over 5,120 tokens on an 80 GB A100/H100.'
+    ' Defaults to true for smaller inputs.',
 )
 _XLA_CLIENT_MEM_FRACTION = flags.DEFINE_float(
     'xla_client_mem_fraction',
-    None,
+    0.95,
     'Proportion of the total GPU memory that XLA will reserve.'
-    ' When unified memory is not in use (default behavior), should be set at 0.95. '
+    ' When unified memory is not in use (default behavior), defaults to 0.95. '
     ' Conversely, using unified memory, you should increase this fraction above 1 '
     ' for XLA to use more than the GPU memory by using the shared CPU memory.'
     ' The value recommended by DeepMind for this parameter when using unified memory is 3.2.',
