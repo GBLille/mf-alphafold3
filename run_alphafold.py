@@ -292,6 +292,36 @@ _JAX_COMPILATION_CACHE_DIR = flags.DEFINE_string(
     None,
     'Path to a directory for the JAX compilation cache.',
 )
+# jax flags for performance issues on high token inputs
+_XLA_FLAGS = flags.DEFINE_string(
+    'xla_flags',
+    None,
+    'Optional value to set for the XLA_FLAGS environment variable before JAX'
+    ' device discovery. For example, --xla_gpu_enable_triton_gemm=false.'
+    ' If unset, the existing environment is left unchanged.',
+)
+_XLA_PYTHON_CLIENT_PREALLOCATE = flags.DEFINE_bool(
+    'xla_python_client_preallocate',
+    None,
+    'Set to false when using unified memory (--tf_force_unified_memory), '
+    ' usually for input over 5,120 tokens on an 80 GB A100/H100,'
+    ' or true in most cases on smaller inputs.',
+)
+_XLA_CLIENT_MEM_FRACTION = flags.DEFINE_float(
+    'xla_client_mem_fraction',
+    None,
+    'Proportion of the total GPU memory that XLA will reserve.'
+    ' When unified memory is not in use (default behavior), should be set at 0.95. '
+    ' Conversely, using unified memory, you should increase this fraction above 1 '
+    ' for XLA to use more than the GPU memory by using the shared CPU memory.'
+    ' The value recommended by DeepMind for this parameter when using unified memory is 3.2.',
+)
+_TF_FORCE_UNIFIED_MEMORY = flags.DEFINE_bool(
+    'tf_force_unified_memory',
+    None,
+    'Use unified memory for larger inputs.'
+    ' Set to true with --xla_python_client_preallocate=false.',
+)
 _GPU_DEVICE = flags.DEFINE_integer(
     'gpu_device',
     0,
@@ -397,6 +427,32 @@ def make_model_config(
   config.return_distogram = return_distogram
   return config
 
+
+def _set_xla_environment(
+    *,
+    xla_flags: str | None = None,
+    xla_python_client_preallocate: bool | None = None,
+    xla_client_mem_fraction: float | None = None,
+    tf_force_unified_memory: bool | None = None,
+) -> None:
+  """Sets optional XLA environment overrides before JAX backend initialisation."""
+  configured_env_vars = []
+  if xla_flags is not None:
+    os.environ['XLA_FLAGS'] = xla_flags
+    configured_env_vars.append('XLA_FLAGS')
+  if xla_python_client_preallocate is not None:
+    os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = str(xla_python_client_preallocate).lower()
+    configured_env_vars.append('XLA_PYTHON_CLIENT_PREALLOCATE')
+  if xla_client_mem_fraction is not None:
+    os.environ['XLA_CLIENT_MEM_FRACTION'] = str(xla_client_mem_fraction)
+    configured_env_vars.append('XLA_CLIENT_MEM_FRACTION')
+  if tf_force_unified_memory is not None:
+    os.environ['TF_FORCE_UNIFIED_MEMORY'] = str(tf_force_unified_memory).lower()
+    configured_env_vars.append('TF_FORCE_UNIFIED_MEMORY')
+
+  if configured_env_vars:
+    print('Configured XLA environment variables from flags: '
+        + ', '.join(configured_env_vars))
 
 class ModelRunner:
   """Helper class to run structure prediction stages."""
@@ -830,6 +886,13 @@ def process_fold_input(
 
 
 def main(_):
+  _set_xla_environment(
+      xla_flags=_XLA_FLAGS.value,
+      xla_python_client_preallocate=_XLA_PYTHON_CLIENT_PREALLOCATE.value,
+      xla_client_mem_fraction=_XLA_CLIENT_MEM_FRACTION.value,
+      tf_force_unified_memory=_TF_FORCE_UNIFIED_MEMORY.value,
+  )
+
   if _JAX_COMPILATION_CACHE_DIR.value is not None:
     jax.config.update(
         'jax_compilation_cache_dir', _JAX_COMPILATION_CACHE_DIR.value
