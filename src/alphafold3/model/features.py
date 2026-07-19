@@ -1,7 +1,16 @@
 # Copyright 2024 DeepMind Technologies Limited
 #
-# AlphaFold 3 source code is licensed under CC BY-NC-SA 4.0. To view a copy of
-# this license, visit https://creativecommons.org/licenses/by-nc-sa/4.0/
+# AlphaFold 3 source code is licensed under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with the
+# License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 # To request access to the AlphaFold 3 model parameters, follow the process set
 # out at https://github.com/google-deepmind/alphafold3. You may only use these
@@ -1825,9 +1834,19 @@ jax.tree_util.register_dataclass(
 
 @dataclasses.dataclass(frozen=True)
 class ConvertModelOutput:
-  """Contains atom layout info."""
+  """Contains information needed to convert model flat output back to structure.
 
-  cleaned_struc: structure.Structure
+  Attributes:
+    token_atoms_layout: Layout mapping tokens to their corresponding atoms.
+    flat_output_layout: Flat layout of all atoms present in the structure.
+    empty_output_struc: Container structure without coordinates used to store
+      the converted model predictions.
+    polymer_ligand_bonds: Atom layout containing information on the bonds
+      between polymers and ligands.
+    ligand_ligand_bonds: Atom layout containing information on the intra- and
+      inter-ligand covalent bonds.
+  """
+
   token_atoms_layout: atom_layout.AtomLayout
   flat_output_layout: atom_layout.AtomLayout
   empty_output_struc: structure.Structure
@@ -1839,7 +1858,6 @@ class ConvertModelOutput:
       cls,
       all_token_atoms_layout: atom_layout.AtomLayout,
       padding_shapes: PaddingShapes,
-      cleaned_struc: structure.Structure,
       flat_output_layout: atom_layout.AtomLayout,
       empty_output_struc: structure.Structure,
       polymer_ligand_bonds: atom_layout.AtomLayout,
@@ -1852,7 +1870,6 @@ class ConvertModelOutput:
     )
 
     return cls(
-        cleaned_struc=cleaned_struc,
         token_atoms_layout=token_atoms_layout,
         flat_output_layout=flat_output_layout,
         empty_output_struc=empty_output_struc,
@@ -1865,7 +1882,6 @@ class ConvertModelOutput:
     """Construct atom layout object from dictionary."""
 
     return cls(
-        cleaned_struc=_unwrap(batch.get('cleaned_struc', None)),
         token_atoms_layout=_unwrap(batch.get('token_atoms_layout', None)),
         flat_output_layout=_unwrap(batch.get('flat_output_layout', None)),
         empty_output_struc=_unwrap(batch.get('empty_output_struc', None)),
@@ -1875,7 +1891,6 @@ class ConvertModelOutput:
 
   def as_data_dict(self) -> BatchDict:
     return {
-        'cleaned_struc': np.array(self.cleaned_struc, object),
         'token_atoms_layout': np.array(self.token_atoms_layout, object),
         'flat_output_layout': np.array(self.flat_output_layout, object),
         'empty_output_struc': np.array(self.empty_output_struc, object),
