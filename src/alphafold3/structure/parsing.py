@@ -715,7 +715,7 @@ def from_sequences_and_bonds(
       if bond_indices_by_atom_name := bond_lookup.get((chain_i, res_i)):
         comp_atoms = None
         if sequence_format != SequenceFormat.LIGAND_SMILES:
-          comp_atoms = set(ccd.get(full_res_name)['_chem_comp_atom.atom_id'])
+          comp_atoms = set(ccd.get(full_res_name)['_chem_comp_atom.atom_id'])  # pyrefly: ignore[unsupported-operation]
         for bond_atom_name, bond_indices in bond_indices_by_atom_name.items():
           if comp_atoms is not None and bond_atom_name not in comp_atoms:
             raise ValueError(
@@ -901,7 +901,7 @@ class _ChainResBuilder:
     if chain_ids.size == 0:
       return
 
-    chain_ids_with_prev = np.concatenate(
+    chain_ids_with_prev = np.concatenate(  # pyrefly: ignore[no-matching-overload]
         (([self.chain_id[-1] if self.chain_id else None], chain_ids))
     )
     chain_change_mask = chain_ids_with_prev[:-1] != chain_ids_with_prev[1:]

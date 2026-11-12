@@ -25,8 +25,8 @@ from typing import Self
 
 from absl import logging
 from alphafold3.constants import mmcif_names
+from alphafold3.cpp import msa_features
 from alphafold3.data import msa_config
-from alphafold3.data import msa_features
 from alphafold3.data import parsers
 from alphafold3.data.tools import jackhmmer
 from alphafold3.data.tools import msa_tool
@@ -197,7 +197,7 @@ class Msa:
       all_descriptions.extend(descriptions)
 
     return cls(
-        query_sequence=query_sequence,
+        query_sequence=query_sequence,  # pyrefly: ignore[bad-argument-type]
         chain_poly_type=chain_poly_type,
         sequences=all_sequences,
         descriptions=all_descriptions,

@@ -2,11 +2,11 @@
 
 # AlphaFold 3
 
-This package provides an implementation of the inference pipeline of AlphaFold
-
-1.  See below for how to access the model parameters. You may only use AlphaFold
-    3 model parameters if received directly from Google. Use is subject to these
-    [terms of use](https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md).
+This package provides an implementation of the inference pipeline of
+AlphaFold 3. See below for how to access the model parameters. You may only use
+AlphaFold 3 model parameters if received directly from Google. Use is subject to
+these
+[terms of use](https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md).
 
 Any publication that discloses findings arising from using this source code, the
 model parameters or outputs produced by those should [cite](#citing-this-work)
@@ -21,18 +21,32 @@ AlphaFold 3 is also available at
 [alphafoldserver.com](https://alphafoldserver.com) for non-commercial use,
 though with a more limited set of ligands and covalent modifications.
 
+For commercial use, AlphaFold 3 is available via
+[Gemini Enterprise Agent Platform on Google Cloud](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/open-models/alphafold-3).
+
 If you have any questions, please contact the AlphaFold team at
 [alphafold@google.com](mailto:alphafold@google.com).
 
 ## Obtaining Model Parameters
 
-This repository contains all necessary code for AlphaFold 3 inference. To
-request access to the AlphaFold 3 model parameters, please complete
-[this form](https://forms.gle/svvpY4u2jsHEwWYS6). Access will be granted at
-Google DeepMind’s sole discretion. We will aim to respond to requests within 2–3
-business days. You may only use AlphaFold 3 model parameters if received
-directly from Google. Use is subject to these
+This repository contains all necessary code for AlphaFold 3 inference. You can
+download the AlphaFold 3 model parameters from
+https://storage.googleapis.com/alphafold3/af3.bin.zst. Use is subject to these
 [terms of use](https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md).
+
+The model parameters for the SynthID Bio-structure version of AlphaFold 3, which
+predicts watermarked structures, is available at
+https://storage.googleapis.com/alphafold3/af3_synthid.bin.zst. See
+[google-deepmind/synthidbio](https://github.com/google-deepmind/synthidbio) for
+more details.
+
+The model parameters for AlphaFold 3 Leaving Atom (AF3-LA) can be used as an
+alternative model fine-tuned for leaving atom handling. The weights are
+available at https://storage.googleapis.com/alphafold3/af3_leaving_atom.bin.zst
+and are subject to the same terms of use as the original AlphaFold 3 model
+parameters. See
+[google-deepmind/alphaprotein-novo](https://github.com/google-deepmind/alphaprotein-novo)
+for more details.
 
 ## Installation and Running Your First Prediction
 
@@ -164,6 +178,9 @@ AlphaFold team at alphafold@google.com.
 We would love to hear your feedback and understand how AlphaFold 3 has been
 useful in your research. Share your stories with us at
 [alphafold@google.com](mailto:alphafold@google.com).
+
+For questions surrounding SynthID Bio-structure, please contact
+[synthidbio@google.com](mailto:synthidbio@google.com).
 
 ## Licence and Disclaimer
 

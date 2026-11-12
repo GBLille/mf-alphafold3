@@ -211,7 +211,7 @@ class StructOfArray:
     cls.__len__ = get_len
     cls.__getitem__ = get_item
     cls.__post_init__ = post_init
-    new_cls = dataclasses.dataclass(cls, frozen=True, eq=False)  # pytype: disable=wrong-keyword-args
+    new_cls = dataclasses.dataclass(cls, frozen=True, eq=False)
     # pytree claims to require metadata to be hashable, not sure why,
     # But making derived dataclass that can just hold metadata
     new_cls.metadata_cls = make_metadata_class(new_cls)
